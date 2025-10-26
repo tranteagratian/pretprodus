@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator TVA - Extragere Preț fără TVA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            color: #333;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .result-value.highlight {
+            color: #667eea;
+            font-size: 26px;
+        }
+
+        .currency {
+            font-size: 18px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculator TVA</h1>
+        <p class="subtitle">Extrage prețul fără TVA din prețul cu TVA inclus</p>
+
+        <div class="input-group">
+            <label for="pretCuTVA">Preț total cu TVA (lei)</label>
+            <input type="number" id="pretCuTVA" placeholder="ex: 70" step="0.01" min="0">
+        </div>
+
+        <div class="input-group">
+            <label for="numarProduse">Număr de produse</label>
+            <input type="number" id="numarProduse" placeholder="ex: 3" step="1" min="1" value="1">
+        </div>
+
+        <div class="input-group">
+            <label for="procentTVA">Procent TVA (%)</label>
+            <input type="number" id="procentTVA" placeholder="ex: 19" step="0.01" min="0" value="19">
+        </div>
+
+        <button onclick="calculeaza()">Calculează</button>
+
+        <div class="results" id="results">
+            <div class="result-item">
+                <div class="result-label">Preț total fără TVA</div>
+                <div class="result-value" id="pretTotalFaraTVA">0.00 <span class="currency">lei</span></div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Preț per bucată fără TVA</div>
+                <div class="result-value highlight" id="pretBucataFaraTVA">0.00 <span class="currency">lei</span></div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">TVA extras (total)</div>
+                <div class="result-value" id="tvaExtras">0.00 <span class="currency">lei</span></div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">TVA per bucată</div>
+                <div class="result-value" id="tvaPerBucata">0.00 <span class="currency">lei</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculeaza() {
+            const pretCuTVA = parseFloat(document.getElementById('pretCuTVA').value);
+            const numarProduse = parseInt(document.getElementById('numarProduse').value);
+            const procentTVA = parseFloat(document.getElementById('procentTVA').value);
+
+            if (isNaN(pretCuTVA) || pretCuTVA <= 0) {
+                alert('Te rog introdu un preț valid!');
+                return;
+            }
+
+            if (isNaN(numarProduse) || numarProduse <= 0) {
+                alert('Te rog introdu un număr valid de produse!');
+                return;
+            }
+
+            if (isNaN(procentTVA) || procentTVA < 0) {
+                alert('Te rog introdu un procent valid de TVA!');
+                return;
+            }
+
+            // Formula: Preț fără TVA = Preț cu TVA / (1 + TVA/100)
+            const pretTotalFaraTVA = pretCuTVA / (1 + procentTVA / 100);
+            const pretBucataFaraTVA = pretTotalFaraTVA / numarProduse;
+            const tvaExtras = pretCuTVA - pretTotalFaraTVA;
+            const tvaPerBucata = tvaExtras / numarProduse;
+
+            document.getElementById('pretTotalFaraTVA').innerHTML =
+                pretTotalFaraTVA.toFixed(2) + ' <span class="currency">lei</span>';
+            document.getElementById('pretBucataFaraTVA').innerHTML =
+                pretBucataFaraTVA.toFixed(2) + ' <span class="currency">lei</span>';
+            document.getElementById('tvaExtras').innerHTML =
+                tvaExtras.toFixed(2) + ' <span class="currency">lei</span>';
+            document.getElementById('tvaPerBucata').innerHTML =
+                tvaPerBucata.toFixed(2) + ' <span class="currency">lei</span>';
+
+            document.getElementById('results').classList.add('show');
+        }
+
+        // Permite calculul cu Enter
+        document.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                calculeaza();
+            }
+        });
+    </script>
+</body>
+</html>
