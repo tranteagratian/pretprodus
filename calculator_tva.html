@@ -207,11 +207,11 @@
         <div class="input-section">
             <div class="input-row">
                 <div class="input-group">
-                    <label for="numeProdus">Nume Produs</label>
-                    <input type="text" id="numeProdus" placeholder="ex: Laptop Dell">
+                    <label for="numarBucati">Număr bucăți</label>
+                    <input type="number" id="numarBucati" placeholder="ex: 3" step="1" min="1" value="1">
                 </div>
                 <div class="input-group">
-                    <label for="pretFaraTVA">Preț fără TVA (lei)</label>
+                    <label for="pretFaraTVA">Preț fără TVA/buc (lei)</label>
                     <input type="number" id="pretFaraTVA" placeholder="ex: 100" step="0.01" min="0">
                 </div>
                 <button onclick="adaugaProdus()">+ Adaugă</button>
@@ -222,16 +222,18 @@
             <table id="tabelProduse">
                 <thead>
                     <tr>
-                        <th>Produs</th>
-                        <th>Preț fără TVA</th>
+                        <th>#</th>
+                        <th>Bucăți</th>
+                        <th>Preț/buc fără TVA</th>
+                        <th>Total fără TVA</th>
                         <th>TVA (21%)</th>
-                        <th>Preț cu TVA</th>
+                        <th>Total cu TVA</th>
                         <th>Acțiuni</th>
                     </tr>
                 </thead>
                 <tbody id="corpTabel">
                     <tr class="empty-state">
-                        <td colspan="5">Nu există produse adăugate. Adaugă primul produs mai sus.</td>
+                        <td colspan="7">Nu există produse adăugate. Adaugă primul produs mai sus.</td>
                     </tr>
                 </tbody>
             </table>
@@ -258,11 +260,11 @@
         const procentTVA = 21;
 
         function adaugaProdus() {
-            const nume = document.getElementById('numeProdus').value.trim();
+            const bucati = parseInt(document.getElementById('numarBucati').value);
             const pret = parseFloat(document.getElementById('pretFaraTVA').value);
 
-            if (!nume) {
-                alert('Te rog introdu numele produsului!');
+            if (isNaN(bucati) || bucati <= 0) {
+                alert('Te rog introdu un număr valid de bucăți!');
                 return;
             }
 
@@ -271,17 +273,22 @@
                 return;
             }
 
+            const totalFaraTVA = bucati * pret;
+            const tvaTotal = totalFaraTVA * (procentTVA / 100);
+            const totalCuTVA = totalFaraTVA + tvaTotal;
+
             produse.push({
                 id: Date.now(),
-                nume: nume,
-                pretFaraTVA: pret,
-                tva: pret * (procentTVA / 100),
-                pretCuTVA: pret * (1 + procentTVA / 100)
+                bucati: bucati,
+                pretPerBucata: pret,
+                totalFaraTVA: totalFaraTVA,
+                tva: tvaTotal,
+                totalCuTVA: totalCuTVA
             });
 
-            document.getElementById('numeProdus').value = '';
+            document.getElementById('numarBucati').value = '1';
             document.getElementById('pretFaraTVA').value = '';
-            document.getElementById('numeProdus').focus();
+            document.getElementById('numarBucati').focus();
 
             afiseazaProduse();
         }
@@ -297,19 +304,21 @@
             if (produse.length === 0) {
                 corpTabel.innerHTML = `
                     <tr class="empty-state">
-                        <td colspan="5">Nu există produse adăugate. Adaugă primul produs mai sus.</td>
+                        <td colspan="7">Nu există produse adăugate. Adaugă primul produs mai sus.</td>
                     </tr>
                 `;
                 document.getElementById('totals').style.display = 'none';
                 return;
             }
 
-            corpTabel.innerHTML = produse.map(produs => `
+            corpTabel.innerHTML = produse.map((produs, index) => `
                 <tr>
-                    <td>${produs.nume}</td>
-                    <td>${produs.pretFaraTVA.toFixed(2)} lei</td>
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${produs.bucati}</td>
+                    <td>${produs.pretPerBucata.toFixed(2)} lei</td>
+                    <td>${produs.totalFaraTVA.toFixed(2)} lei</td>
                     <td>${produs.tva.toFixed(2)} lei</td>
-                    <td><strong>${produs.pretCuTVA.toFixed(2)} lei</strong></td>
+                    <td><strong>${produs.totalCuTVA.toFixed(2)} lei</strong></td>
                     <td>
                         <button class="delete-btn" onclick="stergeProdus(${produs.id})">Șterge</button>
                     </td>
@@ -320,9 +329,9 @@
         }
 
         function calculeazaTotale() {
-            const totalFaraTVA = produse.reduce((sum, p) => sum + p.pretFaraTVA, 0);
+            const totalFaraTVA = produse.reduce((sum, p) => sum + p.totalFaraTVA, 0);
             const totalTVA = produse.reduce((sum, p) => sum + p.tva, 0);
-            const totalCuTVA = produse.reduce((sum, p) => sum + p.pretCuTVA, 0);
+            const totalCuTVA = produse.reduce((sum, p) => sum + p.totalCuTVA, 0);
 
             document.getElementById('totalFaraTVA').textContent = totalFaraTVA.toFixed(2) + ' lei';
             document.getElementById('totalTVA').textContent = totalTVA.toFixed(2) + ' lei';
@@ -337,7 +346,7 @@
             }
         });
 
-        document.getElementById('numeProdus').addEventListener('keypress', function(event) {
+        document.getElementById('numarBucati').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 document.getElementById('pretFaraTVA').focus();
             }
